@@ -7,7 +7,8 @@ flat crit rate for spells\
 cant save character after creating it\
 add temporary stat buffs\
 add haste\
-assumes you have all buffs
+assumes you have all buffs\
+assumes target has no armour
 
 # To Use
 easiest way to use is just add ids in saves.json in format:\
