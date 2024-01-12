@@ -3,9 +3,10 @@ import random
 
 
 class Character:
-    def __init__(self,saved_data="none"):
+    def __init__(self, saved_data="none"):
         f = open("items.json")
         data = json.load(f)
+        f.close()
         self.items = []
         self.item_types = ['head', 'neck', 'shoulder', 'back', 'chest', 'wrist', 'hands', 'waist', 'legs', 'feet',
                            'finger', 'finger1', 'trinket', 'trinket1', 'twohand']
@@ -15,21 +16,20 @@ class Character:
             self.from_save(data, saved_data)
         self.stats = {"agi": 34 + 8 + 4 + 3, "sta": 0, "stg": 48 + 8 + 3 + 4, "ap": 151 + 20 + 60 + 55, "speed": 0,
                       "mindmg": 3, "maxdmg": 3,
-                      "crit": 5 + 2, "hit": 3, "sp": 25}  # base stats + all buffs
+                      "crit": 5 + 2, "hit": 0, "sp": 25,"sp_crit":4.8,"int":47+5}  # base stats + all buffs
         self.get_stats()
-        self.stats["agi"] = 1.1 * self.stats["agi"]  # lion buff
-        self.stats["stg"] = 1.1 * self.stats["stg"]  # lion buff
-        self.stats["ap"] += self.stats["stg"] * 2
-        dps = ((self.stats["mindmg"] + self.stats["maxdmg"]) / 2) / self.stats["speed"]
-        self.stats["dmg"] = (dps + self.stats["ap"] / 14) * self.stats["speed"]
-        self.stats["crit"] = self.stats["agi"] / 20 * 0.01 + 0.07
         print(self.stats)
 
-    def from_new(self, data): # dont think this works cba to check
+    def from_new(self, data):  # dont think this works cba to check
+        ids = []
         for i in self.item_types:
             id = input("id for " + i + "= ")
             while not self.check_item_valid(id, i, data):
                 id = input("id for " + i + "= ")
+            ids.append(id)
+        inp = input("Save? (y/n): ")
+        if inp == "y":
+            self.save_char(ids)
 
     def from_save(self, data, saved_data):
         for i in range(len(saved_data)):
@@ -42,12 +42,23 @@ class Character:
         pos_attributes = [i for i in self.stats.keys()]
         for i in range(len(self.items)):
             for key in self.items[i].keys():
-
                 if key in pos_attributes:
                     self.stats[key] += self.items[i][key]
+        set_num = len(set([i["id"] for i in self.items]) & set([211505, 211504, 211504])) #check for tier
+        if set_num >= 2:
+            self.stats["ap"] += 12
+        elif set_num == 3:
+            self.stats["hit"] += 1
+        print(self.stats)
+        self.stats["agi"] = 1.1 * self.stats["agi"]  # lion buff
+        self.stats["stg"] = 1.1 * self.stats["stg"]  # lion buff
+        self.stats["ap"] += self.stats["stg"] * 2
+        dps = ((self.stats["mindmg"] + self.stats["maxdmg"]) / 2) / self.stats["speed"]
+        self.stats["dmg"] = (dps + self.stats["ap"] / 14) * self.stats["speed"]
+        self.stats["crit"] = self.stats["agi"] / 20 * 0.01
 
     def check_item_valid(self, id, i_type, data):
-        if id =="0":
+        if id == "0":
             return True
         else:
             try:
@@ -61,8 +72,11 @@ class Character:
                 print("Item does not exist " + i_type)
                 return False
 
-
-
+    def save_char(self, ids):
+        name = input("Name to save as: ")
+        with open("items.json", "w") as outfile:
+            json.dump({name: ids}, outfile)
+        outfile.close()
 
 
 class Ability:
@@ -125,27 +139,32 @@ class Ability:
     def detailed_stats(self, time):
         if self.attacks > 0:
             return [self.attacks, 1.15 * self.ability_dmg_total, 1.15 * self.ability_dmg_total / time,
-                1.15 * self.ability_dmg_total / self.attacks]
+                    1.15 * self.ability_dmg_total / self.attacks]
         else:
-            return [0,0,0,0]
+            return [0, 0, 0, 0]
+
 
 
 class Instance:
-    def __init__(self, time,character):
+    def __init__(self, time, character):
         self.time_to_sim = time
         self.save1 = character
-        self.procs = {"soc": Ability(0, lambda stats: 0.70 * stats["dmg"]+8, 199999, "physical", proc_chance=100 * (
-                7 * self.save1.stats["speed"]) / 60)}  # soc proc chacne doesn't scale dynamically with haste think this adds crusader judge in right
+        self.procs = {"soc": Ability(0, lambda stats: 0.70 * stats["dmg"] + 8, 199999, "physical", proc_chance=100 * (
+                7 * self.save1.stats[
+            "speed"]) / 60)}  # soc proc chacne doesn't scale dynamically with haste think this adds crusader judge in right
         self.procs.update(
-            wf=Ability(0, lambda stats: (((stats["mindmg"] + stats["maxdmg"]) / 2) / stats["speed"] + 1.2*stats["ap"] / 14) * stats["speed"], 199999, "aa", procs=[self.procs["soc"]], proc_chance=20))
+            wf=Ability(0, lambda stats: (((stats["mindmg"] + stats["maxdmg"]) / 2) / stats["speed"] + 1.2 * stats[
+                "ap"] / 14) * stats["speed"], 199999, "aa", procs=[self.procs["soc"]], proc_chance=20))
         self.abilities = {"ds": Ability(10, lambda stats: 1.1 * stats["dmg"], 0, "physical"),
                           "cs": Ability(6, lambda stats: 0.75 * stats["dmg"], 1, "physical"),
-                          "judge": Ability(8, lambda stats: 0.85 * random.randint(60, 64)+50, 3, "physical"),# think this adds crusader judge in right
-                          "heavy dynamite": Ability(60, lambda stats:  random.randint(128, 172), 100, "spell"),
+                          "judge": Ability(8, lambda stats: 0.85 * random.randint(60, 64) + 50, 3, "physical"),
+                          # think this adds crusader judge in right
+                          "heavy dynamite": Ability(60, lambda stats: random.randint(128, 172), 100, "spell"),
                           "exo": Ability(15, lambda stats: random.uniform(90 + stats["sp"] * 0.429,
-                                                                         102 + stats["sp"] * 0.429), 2, "spell", ),
+                                                                          102 + stats["sp"] * 0.429), 2, "spell", ),
                           "melee": Ability(self.save1.stats["speed"], lambda stats: stats["dmg"], 100, "aa",
                                            procs=[self.procs["wf"], self.procs["soc"]], gcd=0, on_gcd=False)}
+
     def start_instance(self):
         self.time = self.time_to_sim
         while self.time > 0:
@@ -201,6 +220,7 @@ class Instance:
                 detailed[key][i] += self.procs[key].detailed_stats(self.time_to_sim)[i]
         return detailed
 
+
 class Sim:
     def __init__(self):
         # assume full buffs and hooman with sword or mace and armour s is 0
@@ -210,15 +230,16 @@ class Sim:
         elif inp == "y":
             f = open("saves.json")
             data = json.load(f)
-            inp1=input("select save: "+str(data.keys()))
+            f.close()
+            inp1 = input("select save: " + str(data.keys()))
             self.character = Character(saved_data=data[inp1])
         self.runs = int(input("How many runs? "))
 
     def run_sims(self):
-        total=0
-        time = int(input("How long to run for? "))
+        total = 0
+        time = int(input("How long to run for (s)? "))
         for i in range(0, self.runs):
-            running = Instance(time,self.character)
+            running = Instance(time, self.character)
             running.start_instance()
             total += 1.15 * running.calc_total_dmg() / time
             if i == 0:
@@ -232,13 +253,12 @@ class Sim:
         for key in detailed:
             for i in range(len(detailed[key])):
                 detailed[key][i] = detailed[key][i] / self.runs
-            print(key,":", detailed[key][0], "presses,", detailed[key][1], "total dmg,", detailed[key][2], "dps,",
+            print(key, ":", detailed[key][0], "presses,", detailed[key][1], "total dmg,", detailed[key][2], "dps,",
                   detailed[key][3], "avg dmg per cast")
-        print(total / self.runs,"dps")
+        print(total / self.runs, "dps")
 
 
 if __name__ == "__main__":
     sim1 = Sim()
     sim1.run_sims()
-
-
+    input("press enter to exit")
