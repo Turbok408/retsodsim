@@ -44,7 +44,7 @@ class Character:
             for key in self.items[i].keys():
                 if key in pos_attributes:
                     self.stats[key] += self.items[i][key]
-        set_num = len(set([i["id"] for i in self.items]) & set([211505, 211504, 211504])) #check for tier
+        set_num = len(set([i["id"] for i in self.items]) & set([211505, 211504, 211504,211512,211511,211510])) #check for tier
         if set_num >= 2:
             self.stats["ap"] += 12
         elif set_num == 3:
