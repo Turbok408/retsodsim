@@ -1,11 +1,9 @@
 # Current Issues:
 no int stat in data set \
 cant go oom\
-set bonuses have to be added manually in character class\
 no dots\
 no procs from items\
 flat crit rate for spells\
-cant save character after creating it\
 add temporary stat buffs\
 add haste\
 assumes you have all buffs + enchants\
