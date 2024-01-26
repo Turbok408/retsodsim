@@ -1,4 +1,4 @@
-# Current Issues:
+# NO LONGER UPDATED GO TO https://github.com/Turbok408/retsodsimc FOR UPDATED VERSION Current Issues:
 no int stat in data set \
 cant go oom\
 no dots\
